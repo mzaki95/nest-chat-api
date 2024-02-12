@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { UserContextDto } from 'src/user/dto/user-context.dto';
 import { UserService } from 'src/user/user.service';
 
 @Injectable()
@@ -14,12 +15,17 @@ export class AuthService {
 
     if (user && this.validatePassword(password, user.password)) {
       // Password is valid, return the user
-      return this.signPayload({username: user.username});
+      const userContex = new UserContextDto(user.username);
+      return this.signPayload(userContex);
     }
     console.log("not valid")
 
     // Either user not found or password is incorrect
     return null;
+  }
+
+  async signPayload(payload: UserContextDto): Promise<string> {
+    return this.jwtService.sign({username: payload.username});
   }
 
   validatePassword(password: string, stored: string): boolean {
@@ -29,11 +35,7 @@ export class AuthService {
     return password === stored // TODO: proper hashing for the validated password
   }
 
-  async signPayload(payload: any): Promise<string> {
-    return this.jwtService.sign(payload);
-  }
-
-  async verifyToken(token: string): Promise<any> {
+  verifyToken(token: string): UserContextDto {
     return this.jwtService.verify(token);
   }
 }
